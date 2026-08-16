@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Graafmachine — bedieningspaneel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #1b1e1f;
+    --panel: #24282a;
+    --panel-raised: #2c3134;
+    --steel: #55707f;
+    --amber: #f5a623;
+    --amber-dim: #a6741c;
+    --red: #d64545;
+    --green: #4caf7d;
+    --text: #e8e6e1;
+    --text-dim: #8b9296;
+    --border: #383e41;
+  }
+  *{ box-sizing: border-box; }
+  html,body{
+    margin:0; padding:0; height:100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    -webkit-user-select:none; user-select:none;
+    overscroll-behavior: none;
+  }
+  body{ display:flex; flex-direction:column; min-height:100vh; }
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 14px 20px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .topbar h1{
+    font-size: 20px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    margin:0;
+  }
+
+  /* ---------- tabs ---------- */
+  .tabs{
+    display:flex;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+  .tab-btn{
+    flex:1;
+    padding: 12px 16px;
+    background: transparent;
+    border:none;
+    border-bottom: 3px solid transparent;
+    color: var(--text-dim);
+    font-family:'Rajdhani',sans-serif;
+    font-weight:700;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    cursor:pointer;
+  }
+  .tab-btn.active{
+    color: var(--amber);
+    border-bottom-color: var(--amber);
+  }
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; }
+
+  /* ---------- status row per hub ---------- */
+  .hub-status{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 12px 20px;
+    background: var(--panel-raised);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .hub-status .sub{
+    font-size: 12px; color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .status-group{ display:flex; align-items:center; gap:14px; }
+  .status-dot{
+    width:10px; height:10px; border-radius:50%;
+    background: var(--red); box-shadow: 0 0 8px var(--red);
+    transition: background .2s, box-shadow .2s;
+  }
+  .status-dot.on{ background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .status-text{
+    font-family:'JetBrains Mono', monospace; font-size: 12px;
+    color: var(--text-dim); text-transform: uppercase; letter-spacing: .05em;
+  }
+  button.connect{
+    font-family:'Rajdhani',sans-serif; font-weight:700;
+    letter-spacing:.04em; text-transform:uppercase; font-size:13px;
+    padding: 9px 18px; border-radius: 4px;
+    border: 1px solid var(--amber); background: transparent; color: var(--amber);
+    cursor:pointer; transition: background .15s, color .15s;
+  }
+  button.connect:hover{ background: var(--amber); color:#1b1e1f; }
+  button.connect:disabled{ opacity:.4; cursor:default; border-color: var(--text-dim); color:var(--text-dim); }
+  button.connect:disabled:hover{ background:transparent; color:var(--text-dim); }
+
+  /* ---------- main layout ---------- */
+  main{
+    flex:1; display:grid; grid-template-columns: 1fr 1fr;
+    gap: 1px; background: var(--border);
+  }
+  @media (max-width: 760px){ main{ grid-template-columns: 1fr; } }
+  .pane{ background: var(--bg); padding: 22px; }
+
+  /* ---------- schematic ---------- */
+  .schematic-wrap{ display:flex; flex-direction:column; align-items:center; gap: 10px; }
+  .schematic-wrap svg{ width:100%; max-width:420px; height:auto; }
+  .seg{ transition: stroke .12s, filter .12s; }
+  .seg.active{ stroke: var(--amber) !important; filter: drop-shadow(0 0 5px var(--amber)); }
+  .pivot{ transition: fill .12s; }
+  .pivot.active{ fill: var(--amber) !important; }
+  .track{ transition: fill .12s, filter .12s; }
+  .track.active{ fill: var(--amber) !important; filter: drop-shadow(0 0 5px var(--amber)); }
+
+  /* ---------- speed control ---------- */
+  .speed-row{ display:flex; align-items:center; gap:14px; margin-top: 6px; width:100%; max-width: 420px; }
+  .speed-row label{
+    font-size:12px; text-transform:uppercase; letter-spacing:.06em;
+    color: var(--text-dim); font-family:'JetBrains Mono',monospace; white-space:nowrap;
+  }
+  input[type=range]{
+    -webkit-appearance:none; appearance:none;
+    flex:1; height:4px; background: var(--border); border-radius:2px; outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none;
+    width:16px; height:16px; border-radius:50%;
+    background: var(--amber); cursor:pointer; border: 2px solid #1b1e1f;
+  }
+  .speed-val{ font-family:'JetBrains Mono',monospace; font-size:14px; color: var(--amber); width: 22px; text-align:right; }
+
+  /* ---------- controls grid ---------- */
+  .controls{ display:grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .controls.single-col{ grid-template-columns: 1fr; }
+  .ctrl-card{
+    background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+    padding: 14px; display:flex; flex-direction:column; gap:10px;
+  }
+  .ctrl-card .label{
+    font-size: 13px; font-weight:600; text-transform: uppercase; letter-spacing:.05em;
+    color: var(--text); display:flex; justify-content:space-between; align-items:center;
+  }
+  .ctrl-card .label .chan{
+    font-family:'JetBrains Mono',monospace; font-size: 11px; color: var(--text-dim);
+    background: var(--panel-raised); padding: 2px 6px; border-radius:3px;
+  }
+  .btn-row{ display:flex; gap:8px; }
+  .hold-btn{
+    flex:1; padding: 18px 8px;
+    background: var(--panel-raised); border: 1px solid var(--border); border-radius: 5px;
+    color: var(--text); font-family:'Rajdhani',sans-serif; font-weight:600;
+    font-size: 14px; text-transform: uppercase; letter-spacing:.03em;
+    cursor:pointer; touch-action: none;
+    transition: background .08s, border-color .08s, transform .05s;
+  }
+  .hold-btn:active, .hold-btn.pressed{
+    background: var(--amber); border-color: var(--amber); color: #1b1e1f; transform: scale(0.97);
+  }
+  .hold-btn:disabled{ opacity:.35; cursor:default; }
+
+  .stop-all{
+    margin-top: 4px; width:100%; padding: 16px;
+    background: var(--red); border:none; border-radius:6px;
+    color:#fff; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:16px;
+    letter-spacing:.08em; text-transform:uppercase; cursor:pointer;
+  }
+  .stop-all:disabled{ opacity:.35; cursor:default; }
+  .stop-all:active{ filter: brightness(0.85); }
+
+  /* ---------- log ---------- */
+  .log-wrap{ display:flex; flex-direction:column; height: 100%; }
+  .log-wrap h2{
+    font-size:12px; text-transform:uppercase; letter-spacing:.08em;
+    color: var(--text-dim); margin: 0 0 8px 0; font-weight:600;
+  }
+  .log{
+    flex:1; background:#141617; border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px 12px; font-family:'JetBrains Mono', monospace; font-size: 12px;
+    line-height: 1.6; overflow-y: auto; min-height: 160px; max-height: 260px;
+  }
+  .log .line{ white-space: pre-wrap; word-break: break-all; }
+  .log .line.tx{ color: var(--amber); }
+  .log .line.rx{ color: var(--text-dim); }
+  .log .line.sys{ color: var(--green); }
+  .log .line.err{ color: var(--red); }
+
+  footer{
+    padding: 10px 20px; font-family:'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--text-dim); border-top: 1px solid var(--border); text-align:center;
+  }
+
+  .note{
+    font-size: 12px; color: var(--text-dim); font-family:'JetBrains Mono',monospace;
+    background: var(--panel); border: 1px dashed var(--border); border-radius: 6px;
+    padding: 10px 12px; margin-top: 14px; line-height:1.6;
+  }
+
+  /* ---------- gamepad debug ---------- */
+  .pad-status{
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  }
+  .toggle-row{
+    display:flex; align-items:center; gap:10px;
+    margin-left:auto;
+    font-size:13px; text-transform:uppercase; letter-spacing:.04em;
+    color: var(--text-dim); font-family:'JetBrains Mono',monospace;
+  }
+  .toggle-row input[type=checkbox]{ width:18px; height:18px; accent-color: var(--amber); }
+  .axis-block{
+    background: var(--panel); border: 1px solid var(--border); border-radius:6px;
+    padding: 12px 14px; margin-bottom: 10px;
+  }
+  .axis-block .axis-label{
+    display:flex; justify-content:space-between;
+    font-family:'JetBrains Mono',monospace; font-size:12px; color: var(--text-dim);
+    margin-bottom:6px;
+  }
+  .axis-bar-track{
+    position:relative; height:10px; background: var(--panel-raised); border-radius:5px; overflow:hidden;
+  }
+  .axis-bar-fill{
+    position:absolute; top:0; bottom:0; left:50%;
+    background: var(--amber); width:0; transform-origin:left center;
+  }
+  .btn-grid{
+    display:grid; grid-template-columns: repeat(4, 1fr); gap:6px; margin-top: 14px;
+  }
+  .btn-dot{
+    padding: 8px 4px; text-align:center; border-radius:4px;
+    background: var(--panel-raised); border: 1px solid var(--border);
+    font-family:'JetBrains Mono',monospace; font-size:11px; color: var(--text-dim);
+    transition: background .06s, color .06s;
+  }
+  .btn-dot.pressed{ background: var(--amber); color:#1b1e1f; border-color: var(--amber); }
+  .mapping-table{
+    width:100%; border-collapse: collapse; margin-top: 10px;
+    font-family:'JetBrains Mono',monospace; font-size:12px;
+  }
+  .mapping-table td{ padding: 6px 4px; border-bottom: 1px solid var(--border); color: var(--text-dim); }
+  .mapping-table td:first-child{ color: var(--text); }
+
+  .map-select{
+    font-family:'JetBrains Mono',monospace; font-size:12px;
+    background: var(--panel-raised); color: var(--text);
+    border: 1px solid var(--border); border-radius: 4px;
+    padding: 5px 6px; flex:1; min-width:0;
+  }
+  .axis-block .axis-map-row{
+    display:flex; align-items:center; gap:10px; margin-top:8px;
+  }
+  .axis-block .axis-map-row label{
+    display:flex; align-items:center; gap:5px;
+    font-size:11px; color: var(--text-dim); font-family:'JetBrains Mono',monospace;
+    white-space:nowrap;
+  }
+  .btn-row-map{
+    display:flex; align-items:center; gap:10px;
+    background: var(--panel); border: 1px solid var(--border); border-radius:6px;
+    padding: 8px 10px; margin-bottom:6px;
+  }
+  .btn-row-map .btn-idx{
+    width:44px; text-align:center; padding:4px 0; border-radius:4px;
+    background: var(--panel-raised); font-family:'JetBrains Mono',monospace;
+    font-size:11px; color: var(--text-dim); flex-shrink:0;
+    transition: background .06s, color .06s;
+  }
+  .btn-row-map .btn-idx.pressed{ background: var(--amber); color:#1b1e1f; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Graafmachine — bedieningspaneel</h1>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="hub1">Bovenbouw</button>
+  <button class="tab-btn" data-tab="hub2">Rijwerk (tracks)</button>
+  <button class="tab-btn" data-tab="pad">Controller</button>
+</div>
+
+<!-- ======================= HUB 1 — BOVENBOUW ======================= -->
+<div class="tab-panel active" id="tab-hub1">
+  <div class="hub-status">
+    <span class="sub">hub 1 · a=bak · b=steel · c=rotatie · d=giek</span>
+    <div class="status-group">
+      <span class="status-dot" id="statusDot-hub1"></span>
+      <span class="status-text" id="statusText-hub1">Niet verbonden</span>
+      <button class="connect" id="connectBtn-hub1">Verbind micro:bit</button>
+    </div>
+  </div>
+
+  <main>
+    <div class="pane">
+      <div class="schematic-wrap">
+        <svg viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg">
+          <rect x="60" y="210" width="200" height="26" rx="13" fill="none" stroke="#55707f" stroke-width="3"/>
+          <circle cx="80" cy="223" r="10" fill="#2c3134" stroke="#55707f" stroke-width="2"/>
+          <circle cx="240" cy="223" r="10" fill="#2c3134" stroke="#55707f" stroke-width="2"/>
+          <rect x="90" y="185" width="140" height="26" rx="4" fill="#2c3134" stroke="#383e41" stroke-width="2"/>
+          <circle class="pivot" id="hub1-pivotRotatie" cx="160" cy="198" r="7" fill="#55707f"/>
+          <rect x="100" y="140" width="55" height="46" rx="4" fill="none" stroke="#55707f" stroke-width="3"/>
+          <line class="seg" id="hub1-segGiek" x1="180" y1="185" x2="270" y2="90" stroke="#55707f" stroke-width="10" stroke-linecap="round"/>
+          <line class="seg" id="hub1-segSteel" x1="270" y1="90" x2="230" y2="40" stroke="#55707f" stroke-width="8" stroke-linecap="round"/>
+          <path class="seg" id="hub1-segBak" d="M 230 40 L 205 55 L 210 78 L 235 68 Z" fill="none" stroke="#55707f" stroke-width="6" stroke-linejoin="round"/>
+          <circle cx="180" cy="185" r="5" fill="#383e41"/>
+          <circle cx="270" cy="90" r="5" fill="#383e41"/>
+          <circle cx="230" cy="40" r="5" fill="#383e41"/>
+        </svg>
+        <div class="speed-row">
+          <label for="speed-hub1">Kracht</label>
+          <input type="range" id="speed-hub1" min="1" max="7" value="7" step="1">
+          <span class="speed-val" id="speedVal-hub1">7</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="pane">
+      <div class="controls">
+        <div class="ctrl-card">
+          <div class="label">Bak <span class="chan">a</span></div>
+          <div class="btn-row">
+            <button class="hold-btn" data-hub="hub1" data-chan="a" data-dir="-1" data-seg="hub1-segBak">Openen</button>
+            <button class="hold-btn" data-hub="hub1" data-chan="a" data-dir="1" data-seg="hub1-segBak">Sluiten</button>
+          </div>
+        </div>
+        <div class="ctrl-card">
+          <div class="label">Steel (bak-arm) <span class="chan">b</span></div>
+          <div class="btn-row">
+            <button class="hold-btn" data-hub="hub1" data-chan="b" data-dir="-1" data-seg="hub1-segSteel">In</button>
+            <button class="hold-btn" data-hub="hub1" data-chan="b" data-dir="1" data-seg="hub1-segSteel">Uit</button>
+          </div>
+        </div>
+        <div class="ctrl-card">
+          <div class="label">Rotatie <span class="chan">c</span></div>
+          <div class="btn-row">
+            <button class="hold-btn" data-hub="hub1" data-chan="c" data-dir="-1" data-seg="hub1-pivotRotatie">Links</button>
+            <button class="hold-btn" data-hub="hub1" data-chan="c" data-dir="1" data-seg="hub1-pivotRotatie">Rechts</button>
+          </div>
+        </div>
+        <div class="ctrl-card">
+          <div class="label">Giek (hoofdarm) <span class="chan">d</span></div>
+          <div class="btn-row">
+            <button class="hold-btn" data-hub="hub1" data-chan="d" data-dir="1" data-seg="hub1-segGiek">Omlaag</button>
+            <button class="hold-btn" data-hub="hub1" data-chan="d" data-dir="-1" data-seg="hub1-segGiek">Omhoog</button>
+          </div>
+        </div>
+      </div>
+
+      <button class="stop-all" id="stopAll-hub1" disabled>■ Stop alles</button>
+
+      <div class="log-wrap" style="margin-top:18px;">
+        <h2>Log</h2>
+        <div class="log" id="log-hub1"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ======================= HUB 2 — RIJWERK / TRACKS ======================= -->
+<div class="tab-panel" id="tab-hub2">
+  <div class="hub-status">
+    <span class="sub">hub 2 · a=rups links · c=rups rechts (check dit fysiek, kan omgedraaid zijn)</span>
+    <div class="status-group">
+      <span class="status-dot" id="statusDot-hub2"></span>
+      <span class="status-text" id="statusText-hub2">Niet verbonden</span>
+      <button class="connect" id="connectBtn-hub2">Verbind micro:bit</button>
+    </div>
+  </div>
+
+  <main>
+    <div class="pane">
+      <div class="schematic-wrap">
+        <svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
+          <!-- chassis -->
+          <rect x="120" y="70" width="160" height="40" rx="6" fill="#2c3134" stroke="#383e41" stroke-width="2"/>
+          <!-- linker rups -->
+          <rect class="track" id="hub2-trackL" x="60" y="55" width="60" height="90" rx="24" fill="#2c3134" stroke="#55707f" stroke-width="3"/>
+          <!-- rechter rups -->
+          <rect class="track" id="hub2-trackR" x="280" y="55" width="60" height="90" rx="24" fill="#2c3134" stroke="#55707f" stroke-width="3"/>
+          <text x="90" y="103" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#8b9296">L</text>
+          <text x="310" y="103" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#8b9296">R</text>
+        </svg>
+        <div class="speed-row">
+          <label for="speed-hub2">Kracht</label>
+          <input type="range" id="speed-hub2" min="1" max="7" value="7" step="1">
+          <span class="speed-val" id="speedVal-hub2">7</span>
+        </div>
+        <div class="note">
+          Nog niet hardware-getest (2e hub-adressering bleek instabiel op één
+          micro:bit). Deze tab is klaar om te gebruiken zodra er een 2e
+          micro:bit met dezelfde <code>microbit-setup.js</code> aan hangt —
+          kies 'm dan bij "Verbind micro:bit" hierboven als aparte USB-poort.
+        </div>
+      </div>
+    </div>
+
+    <div class="pane">
+      <div class="controls single-col">
+        <div class="ctrl-card">
+          <div class="label">Recht vooruit / achteruit <span class="chan">a+c</span></div>
+          <div class="btn-row">
+            <button class="hold-btn" data-hub="hub2" data-combo="a:-1,c:-1" data-seg="hub2-trackL,hub2-trackR">Achteruit</button>
+            <button class="hold-btn" data-hub="hub2" data-combo="a:1,c:1" data-seg="hub2-trackL,hub2-trackR">Vooruit</button>
+          </div>
+        </div>
+        <div class="ctrl-card">
+          <div class="label">Rups links <span class="chan">a</span></div>
+          <div class="btn-row">
+            <button class="hold-btn" data-hub="hub2" data-chan="a" data-dir="-1" data-seg="hub2-trackL">Achteruit</button>
+            <button class="hold-btn" data-hub="hub2" data-chan="a" data-dir="1" data-seg="hub2-trackL">Vooruit</button>
+          </div>
+        </div>
+        <div class="ctrl-card">
+          <div class="label">Rups rechts <span class="chan">c</span></div>
+          <div class="btn-row">
+            <button class="hold-btn" data-hub="hub2" data-chan="c" data-dir="-1" data-seg="hub2-trackR">Achteruit</button>
+            <button class="hold-btn" data-hub="hub2" data-chan="c" data-dir="1" data-seg="hub2-trackR">Vooruit</button>
+          </div>
+        </div>
+      </div>
+
+      <button class="stop-all" id="stopAll-hub2" disabled>■ Stop alles</button>
+
+      <div class="log-wrap" style="margin-top:18px;">
+        <h2>Log</h2>
+        <div class="log" id="log-hub2"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ======================= CONTROLLER (GAMEPAD) ======================= -->
+<div class="tab-panel" id="tab-pad">
+  <div class="hub-status">
+    <div class="pad-status">
+      <span class="status-dot" id="statusDot-pad"></span>
+      <span class="status-text" id="statusText-pad">Geen controller gedetecteerd</span>
+      <label class="toggle-row">
+        <input type="checkbox" id="padEnable">
+        Sturing actief
+      </label>
+      <button class="connect" id="padResetMapping" style="margin-left:8px;">Wis mapping</button>
+      <button class="connect" id="padCalibrate">Kalibreer nulpunt</button>
+    </div>
+  </div>
+
+  <main>
+    <div class="pane">
+      <h2 style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin:0 0 10px 0;">Assen — beweeg en wijs toe</h2>
+      <div id="axisGrid"></div>
+      <div class="note">
+        Beweeg een stick/trigger/D-pad, herken 'm aan de bewegende balk, en
+        kies daar een functie bij. "Omkeren" draait de richting om.
+        Mapping wordt automatisch onthouden in deze browser.
+      </div>
+    </div>
+
+    <div class="pane">
+      <h2 style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin:0 0 10px 0;">Knoppen — druk en wijs toe</h2>
+      <div id="btnGrid"></div>
+      <div class="note" id="padDebugId">Controller-ID verschijnt hier zodra gedetecteerd.</div>
+    </div>
+  </main>
+</div>
+
+<footer>Web Serial · elke tab een eigen, onafhankelijke USB-verbinding · geen server nodig</footer>
+
+<script>
+(function(){
+
+  // ---------- tab switching ----------
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  if (!('serial' in navigator)) {
+    document.querySelectorAll('.connect').forEach(b => b.disabled = true);
+  }
+
+  // ---------- reusable per-hub controller ----------
+  function createHub(hubId, channels) {
+    const state = {};
+    channels.forEach(c => state[c] = 0);
+    let port, writer, reader, connected = false;
+
+    const statusDot = document.getElementById('statusDot-' + hubId);
+    const statusText = document.getElementById('statusText-' + hubId);
+    const connectBtn = document.getElementById('connectBtn-' + hubId);
+    const stopAllBtn = document.getElementById('stopAll-' + hubId);
+    const logEl = document.getElementById('log-' + hubId);
+    const speedInput = document.getElementById('speed-' + hubId);
+    const speedVal = document.getElementById('speedVal-' + hubId);
+    const holdBtns = Array.from(document.querySelectorAll('.hold-btn[data-hub="' + hubId + '"]'));
+
+    function log(msg, cls){
+      const line = document.createElement('div');
+      line.className = 'line ' + (cls || '');
+      const t = new Date().toLocaleTimeString('nl-NL', {hour12:false});
+      line.textContent = '[' + t + '] ' + msg;
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+      while (logEl.children.length > 200) logEl.removeChild(logEl.firstChild);
+    }
+
+    speedInput.addEventListener('input', () => { speedVal.textContent = speedInput.value; });
+
+    async function connect(){
+      try{
+        port = await navigator.serial.requestPort();
+        await port.open({ baudRate: 9600 });
+        writer = port.writable.getWriter();
+        setStatus(true);
+        log('Verbonden met micro:bit (' + hubId + ').', 'sys');
+        readLoop();
+      } catch(err){
+        log('Verbinden mislukt: ' + err.message, 'err');
+      }
+    }
+
+    async function readLoop(){
+      const decoder = new TextDecoderStream();
+      port.readable.pipeTo(decoder.writable).catch(()=>{});
+      reader = decoder.readable.getReader();
+      try{
+        while(true){
+          const { value, done } = await reader.read();
+          if (done) break;
+          if (value) value.split(/\r?\n/).forEach(l => { if (l.trim()) log(l.trim(), 'rx'); });
+        }
+      } catch(err){
+        log('Leesfout: ' + err.message, 'err');
+      } finally {
+        setStatus(false);
+      }
+    }
+
+    function setStatus(on){
+      connected = on;
+      statusDot.classList.toggle('on', on);
+      statusText.textContent = on ? 'Verbonden' : 'Niet verbonden';
+      connectBtn.textContent = on ? 'Verbonden' : 'Verbind micro:bit';
+      connectBtn.disabled = on;
+      stopAllBtn.disabled = !on;
+      holdBtns.forEach(b => b.disabled = !on);
+    }
+
+    async function sendState(){
+      if (!connected || !writer) return;
+      const full = { a:0, b:0, c:0, d:0, ...state };
+      const cmd = 'lego.set({a:' + full.a + ',b:' + full.b + ',c:' + full.c + ',d:' + full.d + '});\n';
+      try{
+        await writer.write(new TextEncoder().encode(cmd));
+        log(cmd.trim(), 'tx');
+      } catch(err){
+        log('Schrijffout: ' + err.message, 'err');
+      }
+    }
+
+    function setChannel(chan, value, segId){
+      if (state[chan] === value) return;
+      state[chan] = value;
+      sendState();
+      const segEl = document.getElementById(segId);
+      if (segEl) segEl.classList.toggle('active', value !== 0);
+    }
+
+    function setChannels(pairs, segIds){
+      let changed = false;
+      pairs.forEach(([chan, value]) => {
+        if (state[chan] !== value){ state[chan] = value; changed = true; }
+      });
+      if (changed) sendState();
+      const anyActive = pairs.some(([,v]) => v !== 0);
+      segIds.forEach(segId => {
+        const segEl = document.getElementById(segId);
+        if (segEl) segEl.classList.toggle('active', anyActive);
+      });
+    }
+
+    function stopAll(){
+      channels.forEach(c => state[c] = 0);
+      sendState();
+      document.querySelectorAll('#tab-' + hubId + ' .seg, #tab-' + hubId + ' .pivot, #tab-' + hubId + ' .track')
+        .forEach(el => el.classList.remove('active'));
+      holdBtns.forEach(b => b.classList.remove('pressed'));
+    }
+
+    holdBtns.forEach(btn => {
+      const segIds = btn.dataset.seg.split(',');
+
+      if (btn.dataset.combo){
+        // combo button: "a:1,c:1" -> drives multiple channels at once
+        const parsePairs = (mult) => btn.dataset.combo.split(',').map(p => {
+          const [chan, val] = p.split(':');
+          return [chan, parseInt(val, 10) * mult];
+        });
+
+        const press = (e) => {
+          e.preventDefault();
+          if (!connected) return;
+          btn.classList.add('pressed');
+          setChannels(parsePairs(parseInt(speedInput.value, 10)), segIds);
+        };
+        const release = (e) => {
+          e.preventDefault();
+          if (!connected) return;
+          btn.classList.remove('pressed');
+          setChannels(parsePairs(0), segIds);
+        };
+
+        btn.addEventListener('mousedown', press);
+        btn.addEventListener('touchstart', press, { passive:false });
+        btn.addEventListener('mouseup', release);
+        btn.addEventListener('mouseleave', release);
+        btn.addEventListener('touchend', release);
+        btn.addEventListener('touchcancel', release);
+        return;
+      }
+
+      const chan = btn.dataset.chan;
+      const dir = parseInt(btn.dataset.dir, 10);
+      const segId = segIds[0];
+
+      const press = (e) => {
+        e.preventDefault();
+        if (!connected) return;
+        const power = dir * parseInt(speedInput.value, 10);
+        btn.classList.add('pressed');
+        setChannel(chan, power, segId);
+      };
+      const release = (e) => {
+        e.preventDefault();
+        if (!connected) return;
+        btn.classList.remove('pressed');
+        setChannel(chan, 0, segId);
+      };
+
+      btn.addEventListener('mousedown', press);
+      btn.addEventListener('touchstart', press, { passive:false });
+      btn.addEventListener('mouseup', release);
+      btn.addEventListener('mouseleave', release);
+      btn.addEventListener('touchend', release);
+      btn.addEventListener('touchcancel', release);
+    });
+
+    connectBtn.addEventListener('click', connect);
+    stopAllBtn.addEventListener('click', stopAll);
+    window.addEventListener('beforeunload', stopAll);
+
+    return { stopAll, setChannel, isConnected: () => connected };
+  }
+
+  const hub1 = createHub('hub1', ['a','b','c','d']);
+  const hub2 = createHub('hub2', ['a','c']);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { hub1.stopAll(); hub2.stopAll(); }
+  });
+
+  // ---------- gamepad (PS3-stijl bekabelde controller) met zelf toe te wijzen mapping ----------
+  (function(){
+    const statusDot = document.getElementById('statusDot-pad');
+    const statusText = document.getElementById('statusText-pad');
+    const padEnable = document.getElementById('padEnable');
+    const btnGrid = document.getElementById('btnGrid');
+    const axisGrid = document.getElementById('axisGrid');
+    const padDebugId = document.getElementById('padDebugId');
+    const resetBtn = document.getElementById('padResetMapping');
+    const calibrateBtn = document.getElementById('padCalibrate');
+    const DEADZONE = 0.15;
+    const STORAGE_KEY = 'mkg_gamepad_mapping_v1';
+
+    // Toewijsbare doelen: elk kanaal op elke hub, met labels voor + en - richting
+    const TARGETS = [
+      { hub:'hub1', chan:'a', label:'Hub1 · Bak',          neg:'Openen',    pos:'Sluiten',   segNeg:'hub1-segBak',      segPos:'hub1-segBak' },
+      { hub:'hub1', chan:'b', label:'Hub1 · Steel',        neg:'In',        pos:'Uit',       segNeg:'hub1-segSteel',    segPos:'hub1-segSteel' },
+      { hub:'hub1', chan:'c', label:'Hub1 · Rotatie',      neg:'Links',     pos:'Rechts',    segNeg:'hub1-pivotRotatie',segPos:'hub1-pivotRotatie' },
+      { hub:'hub1', chan:'d', label:'Hub1 · Giek',         neg:'Omhoog',    pos:'Omlaag',    segNeg:'hub1-segGiek',     segPos:'hub1-segGiek' },
+      { hub:'hub2', chan:'a', label:'Hub2 · Rups links',   neg:'Achteruit', pos:'Vooruit',   segNeg:'hub2-trackL',      segPos:'hub2-trackL' },
+      { hub:'hub2', chan:'c', label:'Hub2 · Rups rechts',  neg:'Achteruit', pos:'Vooruit',   segNeg:'hub2-trackR',      segPos:'hub2-trackR' },
+    ];
+
+    // mapping state:
+    //  axis:   { [index]: {hub,chan,invert} }              - continue as-mapping
+    //  button: { [index]: {hub,chan,sign} }                 - losse knop
+    //  dpad:   { [index]: {up,down,left,right} }             - hat-switch as, elk {hub,chan,sign}|null
+    //  calib:  { [index]: offsetValue }                      - rustpositie-correctie per as
+    let mapping = { axis:{}, button:{}, dpad:{}, calib:{} };
+    function loadMapping(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) mapping = Object.assign({ axis:{}, button:{}, dpad:{}, calib:{} }, JSON.parse(raw));
+      } catch(e){ /* corrupte data negeren, met lege mapping starten */ }
+    }
+    function saveMapping(){
+      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(mapping)); } catch(e){}
+    }
+    loadMapping();
+
+    let lastGp = null;
+
+    resetBtn.addEventListener('click', () => {
+      mapping = { axis:{}, button:{}, dpad:{}, calib:{} };
+      saveMapping();
+      axisBlocks = []; btnRows = [];
+      axisGrid.innerHTML = ''; btnGrid.innerHTML = '';
+    });
+
+    calibrateBtn.addEventListener('click', () => {
+      if (!lastGp){ return; }
+      lastGp.axes.forEach((v, i) => {
+        if (!mapping.dpad[i]) mapping.calib[i] = v; // hat-assen niet kalibreren, discrete waarden
+      });
+      saveMapping();
+      calibrateBtn.textContent = 'Nulpunt vastgelegd ✓';
+      setTimeout(() => { calibrateBtn.textContent = 'Kalibreer nulpunt'; }, 1500);
+    });
+
+    function buildAxisSelect(){
+      const sel = document.createElement('select');
+      sel.className = 'map-select';
+      const optNone = document.createElement('option');
+      optNone.value = ''; optNone.textContent = 'Geen';
+      sel.appendChild(optNone);
+      TARGETS.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.hub + ':' + t.chan;
+        opt.textContent = t.label;
+        sel.appendChild(opt);
+      });
+      return sel;
+    }
+
+    function buildButtonSelect(){
+      const sel = document.createElement('select');
+      sel.className = 'map-select';
+      const optNone = document.createElement('option');
+      optNone.value = ''; optNone.textContent = 'Geen';
+      sel.appendChild(optNone);
+      TARGETS.forEach(t => {
+        const optNeg = document.createElement('option');
+        optNeg.value = t.hub + ':' + t.chan + ':-1';
+        optNeg.textContent = t.label + ' · ' + t.neg;
+        sel.appendChild(optNeg);
+        const optPos = document.createElement('option');
+        optPos.value = t.hub + ':' + t.chan + ':1';
+        optPos.textContent = t.label + ' · ' + t.pos;
+        sel.appendChild(optPos);
+      });
+      return sel;
+    }
+
+    function targetSeg(hub, chan, sign){
+      const t = TARGETS.find(t => t.hub===hub && t.chan===chan);
+      if (!t) return null;
+      return sign < 0 ? t.segNeg : t.segPos;
+    }
+
+    let axisBlocks = [];
+    function ensureAxisGrid(count){
+      if (axisBlocks.length === count) return;
+      axisGrid.innerHTML = '';
+      axisBlocks = [];
+      for (let i = 0; i < count; i++){
+        const wrap = document.createElement('div');
+        wrap.className = 'axis-block';
+
+        const label = document.createElement('div');
+        label.className = 'axis-label';
+        label.innerHTML = '<span>Axis ' + i + '</span><span class="axVal">0.00000</span>';
+        wrap.appendChild(label);
+
+        const track = document.createElement('div');
+        track.className = 'axis-bar-track';
+        const fill = document.createElement('div');
+        fill.className = 'axis-bar-fill';
+        track.appendChild(fill);
+        wrap.appendChild(track);
+
+        // --- normale (continue) mapping-rij ---
+        const normalRow = document.createElement('div');
+        normalRow.className = 'axis-map-row';
+        const select = buildAxisSelect();
+        const savedAxis = mapping.axis[i];
+        if (savedAxis) select.value = savedAxis.hub + ':' + savedAxis.chan;
+        select.addEventListener('change', () => {
+          if (!select.value){ delete mapping.axis[i]; }
+          else {
+            const [hub, chan] = select.value.split(':');
+            mapping.axis[i] = { hub, chan, invert: invertCb.checked };
+          }
+          saveMapping();
+        });
+        normalRow.appendChild(select);
+
+        const invertLabel = document.createElement('label');
+        const invertCb = document.createElement('input');
+        invertCb.type = 'checkbox';
+        invertCb.checked = savedAxis ? !!savedAxis.invert : false;
+        invertCb.addEventListener('change', () => {
+          if (mapping.axis[i]) { mapping.axis[i].invert = invertCb.checked; saveMapping(); }
+        });
+        invertLabel.appendChild(invertCb);
+        invertLabel.appendChild(document.createTextNode('Omkeren'));
+        normalRow.appendChild(invertLabel);
+        wrap.appendChild(normalRow);
+
+        // --- D-pad (hat-switch) mapping: 4 losse richtingen ---
+        const dpadRow = document.createElement('div');
+        dpadRow.className = 'axis-map-row';
+        dpadRow.style.flexWrap = 'wrap';
+        const dpadSaved = mapping.dpad[i] || {};
+        ['up','down','left','right'].forEach(dir => {
+          const dirLabel = { up:'Omhoog', down:'Omlaag', left:'Links', right:'Rechts' }[dir];
+          const miniWrap = document.createElement('div');
+          miniWrap.style.display = 'flex';
+          miniWrap.style.flexDirection = 'column';
+          miniWrap.style.gap = '3px';
+          miniWrap.style.flex = '1 1 45%';
+          const miniLabel = document.createElement('span');
+          miniLabel.textContent = dirLabel;
+          miniLabel.style.fontSize = '10px';
+          miniLabel.style.color = 'var(--text-dim)';
+          miniLabel.style.fontFamily = "'JetBrains Mono',monospace";
+          const miniSelect = buildButtonSelect();
+          if (dpadSaved[dir]) miniSelect.value = dpadSaved[dir].hub + ':' + dpadSaved[dir].chan + ':' + dpadSaved[dir].sign;
+          miniSelect.addEventListener('change', () => {
+            if (!mapping.dpad[i]) mapping.dpad[i] = {};
+            if (!miniSelect.value){ delete mapping.dpad[i][dir]; }
+            else {
+              const [hub, chan, signStr] = miniSelect.value.split(':');
+              mapping.dpad[i][dir] = { hub, chan, sign: parseInt(signStr, 10) };
+            }
+            saveMapping();
+          });
+          miniWrap.appendChild(miniLabel);
+          miniWrap.appendChild(miniSelect);
+          dpadRow.appendChild(miniWrap);
+        });
+        dpadRow.style.display = mapping.dpad[i] !== undefined || (savedAxis === undefined && false) ? 'flex' : 'none';
+        wrap.appendChild(dpadRow);
+
+        // --- toggle tussen normale as-mapping en D-pad-modus ---
+        const toggleLabel = document.createElement('label');
+        toggleLabel.style.display = 'flex';
+        toggleLabel.style.alignItems = 'center';
+        toggleLabel.style.gap = '5px';
+        toggleLabel.style.fontSize = '11px';
+        toggleLabel.style.color = 'var(--text-dim)';
+        toggleLabel.style.fontFamily = "'JetBrains Mono',monospace";
+        toggleLabel.style.marginTop = '6px';
+        const toggleCb = document.createElement('input');
+        toggleCb.type = 'checkbox';
+        const isDpad = !!mapping.dpad[i];
+        toggleCb.checked = isDpad;
+        normalRow.style.display = isDpad ? 'none' : 'flex';
+        dpadRow.style.display = isDpad ? 'flex' : 'none';
+        toggleCb.addEventListener('change', () => {
+          if (toggleCb.checked){
+            delete mapping.axis[i];
+            mapping.dpad[i] = mapping.dpad[i] || {};
+            normalRow.style.display = 'none';
+            dpadRow.style.display = 'flex';
+          } else {
+            delete mapping.dpad[i];
+            normalRow.style.display = 'flex';
+            dpadRow.style.display = 'none';
+          }
+          saveMapping();
+        });
+        toggleLabel.appendChild(toggleCb);
+        toggleLabel.appendChild(document.createTextNode('Dit is een D-pad / hat-switch (4 richtingen)'));
+        wrap.appendChild(toggleLabel);
+
+        axisGrid.appendChild(wrap);
+        axisBlocks.push({ val: label.querySelector('.axVal'), bar: fill });
+      }
+    }
+
+    let btnRows = [];
+    function ensureButtonGrid(count){
+      if (btnRows.length === count) return;
+      btnGrid.innerHTML = '';
+      btnRows = [];
+      for (let i = 0; i < count; i++){
+        const row = document.createElement('div');
+        row.className = 'btn-row-map';
+
+        const idx = document.createElement('div');
+        idx.className = 'btn-idx';
+        idx.textContent = 'B' + i;
+        row.appendChild(idx);
+
+        const select = buildButtonSelect();
+        const saved = mapping.button[i];
+        if (saved) select.value = saved.hub + ':' + saved.chan + ':' + saved.sign;
+        select.addEventListener('change', () => {
+          if (!select.value){ delete mapping.button[i]; }
+          else {
+            const [hub, chan, signStr] = select.value.split(':');
+            mapping.button[i] = { hub, chan, sign: parseInt(signStr, 10) };
+          }
+          saveMapping();
+        });
+        row.appendChild(select);
+
+        btnGrid.appendChild(row);
+        btnRows.push({ idx });
+      }
+    }
+
+    function applyDeadzone(v){
+      if (Math.abs(v) < DEADZONE) return 0;
+      const sign = v < 0 ? -1 : 1;
+      return sign * (Math.abs(v) - DEADZONE) / (1 - DEADZONE);
+    }
+
+    function poll(){
+      const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+      const gp = Array.from(pads).find(p => p && p.connected);
+
+      if (!gp){
+        statusDot.classList.remove('on');
+        statusText.textContent = 'Geen controller gedetecteerd (druk een knop in op de controller)';
+        requestAnimationFrame(poll);
+        return;
+      }
+
+      statusDot.classList.add('on');
+      statusText.textContent = 'Verbonden: ' + gp.id;
+      padDebugId.textContent = 'ID: ' + gp.id + ' · assen: ' + gp.axes.length + ' · knoppen: ' + gp.buttons.length + ' · mapping: ' + (gp.mapping || 'n/a');
+      lastGp = gp;
+
+      ensureAxisGrid(gp.axes.length);
+      gp.axes.forEach((raw, i) => {
+        const block = axisBlocks[i];
+        if (!block) return;
+        block.val.textContent = raw.toFixed(5);
+        const clamped = Math.max(-1, Math.min(1, raw));
+        const pct = clamped * 50;
+        block.bar.style.width = Math.abs(pct) + '%';
+        block.bar.style.left = pct < 0 ? (50 + pct) + '%' : '50%';
+      });
+
+      ensureButtonGrid(gp.buttons.length);
+      gp.buttons.forEach((b, i) => {
+        const row = btnRows[i];
+        if (row) row.idx.classList.toggle('pressed', b.pressed || b.value > 0.5);
+      });
+
+      // Decodeer een hat-switch as (0..8 genormaliseerd naar -1..1.2857,
+      // 8 = gecentreerd/geen richting) naar 4 losse aan/uit-richtingen.
+      function decodeHat(raw){
+        const idx = Math.round((raw + 1) * 3.5);
+        return {
+          up:    idx === 0 || idx === 1 || idx === 7,
+          right: idx === 1 || idx === 2 || idx === 3,
+          down:  idx === 3 || idx === 4 || idx === 5,
+          left:  idx === 5 || idx === 6 || idx === 7,
+        };
+      }
+
+      if (padEnable.checked){
+        const speed = parseInt(document.getElementById('speed-hub1').value, 10) || 7;
+        const desired = { hub1:{a:0,b:0,c:0,d:0}, hub2:{a:0,c:0} };
+
+        // continue as-mappingen (met kalibratie-offset)
+        Object.keys(mapping.axis).forEach(i => {
+          const m = mapping.axis[i];
+          const raw = gp.axes[i];
+          if (raw === undefined) return;
+          const offset = mapping.calib[i] || 0;
+          let v = applyDeadzone(raw - offset);
+          if (m.invert) v = -v;
+          const val = Math.round(v * speed);
+          if (desired[m.hub] && (m.chan in desired[m.hub])) desired[m.hub][m.chan] += val;
+        });
+
+        // D-pad / hat-switch assen
+        Object.keys(mapping.dpad).forEach(i => {
+          const raw = gp.axes[i];
+          if (raw === undefined) return;
+          const dirs = decodeHat(raw);
+          const dpadMap = mapping.dpad[i];
+          ['up','down','left','right'].forEach(dir => {
+            const m = dpadMap[dir];
+            if (!m || !dirs[dir]) return;
+            if (desired[m.hub] && (m.chan in desired[m.hub])) desired[m.hub][m.chan] += m.sign * speed;
+          });
+        });
+
+        // knoppen
+        gp.buttons.forEach((b, i) => {
+          const m = mapping.button[i];
+          if (!m) return;
+          if (b.pressed || b.value > 0.5){
+            if (desired[m.hub] && (m.chan in desired[m.hub])) desired[m.hub][m.chan] += m.sign * speed;
+          }
+        });
+
+        ['hub1','hub2'].forEach(hubId => {
+          const hub = hubId === 'hub1' ? hub1 : hub2;
+          if (!hub.isConnected()) return;
+          Object.keys(desired[hubId]).forEach(chan => {
+            const val = Math.max(-7, Math.min(7, desired[hubId][chan]));
+            const seg = targetSeg(hubId, chan, val || 1);
+            hub.setChannel(chan, val, seg);
+          });
+        });
+      }
+
+      requestAnimationFrame(poll);
+    }
+
+    requestAnimationFrame(poll);
+  })();
+})();
+</script>
+
+</body>
+</html>
