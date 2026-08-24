@@ -27,8 +27,8 @@ kanaal-toewijzing per hub.
 ## Architectuur
 
 ```
-[Browser: control-panel.html]
-        │  Web Serial (USB)
+[Browser: web/index.html + web/js/*.js]
+        │  Web Serial (USB) — globaal, niet aan een tab gebonden
         ▼
 [micro:bit: Espruino + mouldking module]
         │  BLE advertising (nabootsing MouldKing-afstandsbediening)
@@ -36,9 +36,15 @@ kanaal-toewijzing per hub.
 [MouldKing hub] ──► motoren
 ```
 
-Elke hub heeft zijn eigen onafhankelijke Web Serial-verbinding (eigen tab
-in de webpagina). Zie [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) voor
-het volledige plaatje, inclusief de gamepad-laag.
+Elke micro:bit wordt automatisch herkend aan zijn vaste BLE MAC-adres en
+gekoppeld aan een hub-rol — geen handmatige toewijzing per tab nodig.
+Zie [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) voor het volledige
+plaatje, inclusief de gamepad- en sequence-lagen.
+
+⚠️ **Belangrijk**: de v3-architectuur (dit README beschrijft die versie)
+is gebouwd maar nog niet in de praktijk getest — zie
+[`docs/STATUS.md`](docs/STATUS.md) voor wat als eerste geverifieerd moet
+worden.
 
 ## Snel starten
 
@@ -48,10 +54,13 @@ het volledige plaatje, inclusief de gamepad-laag.
    blijvend in flash staat. Herhaal dit per hub die je wilt aansturen (elke
    hub heeft zijn eigen micro:bit nodig — zie
    [`docs/PROTOCOL.md`](docs/PROTOCOL.md) voor waarom).
-2. **Webinterface**: open `web/control-panel.html` in Chrome of Edge
-   (Web Serial API vereist, Safari/Firefox werken niet).
-3. Klik "Verbind micro:bit" in de gewenste tab, kies de juiste USB-poort.
-4. Bedienen met de knoppen, of koppel een gamepad via de "Controller"-tab.
+2. **Webinterface**: open `web/index.html` in Chrome of Edge
+   (Web Serial API vereist, Safari/Firefox werken niet). Alle bestanden
+   in `web/js/` moeten naast `index.html` blijven staan.
+3. Klik "+ Verbind micro:bit" (bovenaan, overal in de app bereikbaar) —
+   elke hub wordt automatisch herkend aan zijn micro:bit en gekoppeld.
+4. Bedienen met de knoppen (tab "Bovenbouw"/"Rijwerk"/"Overzicht"), of
+   koppel een gamepad via de "Controller"-tab.
 
 ## Status en vervolgstappen
 

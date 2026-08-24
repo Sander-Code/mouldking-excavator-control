@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Graafmachine — bedieningspaneel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #1b1e1f; --panel: #24282a; --panel-raised: #2c3134;
+    --steel: #55707f; --amber: #f5a623; --amber-dim: #a6741c;
+    --red: #d64545; --green: #4caf7d; --text: #e8e6e1; --text-dim: #8b9296;
+    --border: #383e41;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; height:100%; background: var(--bg); color: var(--text);
+    font-family: 'Rajdhani', sans-serif; -webkit-user-select:none; user-select:none;
+    overscroll-behavior: none; }
+  body{ display:flex; flex-direction:column; min-height:100vh; }
+
+  .sticky-header{ position: sticky; top: 0; z-index: 50; }
+  .topbar{ display:flex; align-items:center; justify-content:space-between; padding: 12px 20px;
+    background: var(--panel); border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px; }
+  .topbar h1{ font-size: 18px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin:0; }
+
+  /* ---------- globale connectiebalk ---------- */
+  .conn-bar{ display:flex; align-items:center; gap:16px; padding: 10px 20px; background: var(--panel-raised);
+    border-bottom: 1px solid var(--border); flex-wrap:wrap; }
+  .conn-slot{ display:flex; align-items:center; gap:8px; font-family:'JetBrains Mono',monospace; font-size:12px; }
+  .status-dot{ width:9px; height:9px; border-radius:50%; background: var(--red); box-shadow: 0 0 6px var(--red);
+    transition: background .2s, box-shadow .2s; flex-shrink:0; }
+  .status-dot.on{ background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .conn-label{ color: var(--text-dim); text-transform:uppercase; letter-spacing:.04em; }
+  button{ font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+    font-size:12px; padding: 7px 14px; border-radius: 4px; border: 1px solid var(--amber); background: transparent;
+    color: var(--amber); cursor:pointer; transition: background .15s, color .15s; }
+  button:hover{ background: var(--amber); color:#1b1e1f; }
+  button:disabled{ opacity:.4; cursor:default; border-color: var(--text-dim); color:var(--text-dim); }
+  button:disabled:hover{ background:transparent; color:var(--text-dim); }
+  button.danger{ border-color: var(--red); color: var(--red); }
+  button.danger:hover{ background: var(--red); color:#fff; }
+  .conn-bar .spacer{ flex:1; }
+
+  /* ---------- tabs ---------- */
+  .tabs{ display:flex; background: var(--panel); border-bottom: 1px solid var(--border); overflow-x:auto; }
+  .tab-btn{ flex:1; min-width:120px; padding: 11px 14px; background: transparent; border:none;
+    border-bottom: 3px solid transparent; color: var(--text-dim); font-family:'Rajdhani',sans-serif;
+    font-weight:700; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; cursor:pointer; }
+  .tab-btn.active{ color: var(--amber); border-bottom-color: var(--amber); }
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; }
+
+  main{ flex:1; display:grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); }
+  main.cols-1{ grid-template-columns: 1fr; }
+  @media (max-width: 760px){ main{ grid-template-columns: 1fr; } }
+  .pane{ background: var(--bg); padding: 20px; }
+  h2.sect{ font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-dim);
+    margin:0 0 10px 0; font-weight:600; }
+
+  /* ---------- schematic ---------- */
+  .schematic-wrap{ display:flex; flex-direction:column; align-items:center; gap: 10px; }
+  .schematic-wrap svg{ width:100%; max-width:380px; height:auto; }
+  .seg{ transition: stroke .12s, filter .12s; }
+  .seg.active{ stroke: var(--amber) !important; filter: drop-shadow(0 0 5px var(--amber)); }
+  .pivot{ transition: fill .12s; }
+  .pivot.active{ fill: var(--amber) !important; }
+  .track{ transition: fill .12s, filter .12s; }
+  .track.active{ fill: var(--amber) !important; filter: drop-shadow(0 0 5px var(--amber)); }
+
+  /* ---------- kracht (globaal) ---------- */
+  .speed-row{ display:flex; align-items:center; gap:14px; margin-top: 6px; width:100%; max-width: 380px; }
+  .speed-row label{ font-size:12px; text-transform:uppercase; letter-spacing:.06em; color: var(--text-dim);
+    font-family:'JetBrains Mono',monospace; white-space:nowrap; }
+  input[type=range]{ -webkit-appearance:none; appearance:none; flex:1; height:4px; background: var(--border);
+    border-radius:2px; outline:none; }
+  input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:16px; height:16px;
+    border-radius:50%; background: var(--amber); cursor:pointer; border: 2px solid #1b1e1f; }
+  .speed-val{ font-family:'JetBrains Mono',monospace; font-size:14px; color: var(--amber); width: 32px; text-align:right; }
+
+  /* ---------- controls grid ---------- */
+  .controls{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .controls.single-col{ grid-template-columns: 1fr; }
+  .ctrl-card{ background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 12px;
+    display:flex; flex-direction:column; gap:8px; }
+  .ctrl-card .label{ font-size: 12px; font-weight:600; text-transform: uppercase; letter-spacing:.04em;
+    color: var(--text); display:flex; justify-content:space-between; align-items:center; }
+  .ctrl-card .label .chan{ font-family:'JetBrains Mono',monospace; font-size: 10px; color: var(--text-dim);
+    background: var(--panel-raised); padding: 2px 6px; border-radius:3px; }
+  .btn-row{ display:flex; gap:8px; }
+  .hold-btn{ flex:1; padding: 16px 8px; background: var(--panel-raised); border: 1px solid var(--border);
+    border-radius: 5px; color: var(--text); font-family:'Rajdhani',sans-serif; font-weight:600; font-size: 13px;
+    text-transform: uppercase; letter-spacing:.02em; cursor:pointer; touch-action: none;
+    transition: background .08s, border-color .08s, transform .05s; }
+  .hold-btn:active, .hold-btn.pressed{ background: var(--amber); border-color: var(--amber); color: #1b1e1f;
+    transform: scale(0.97); }
+  .hold-btn:disabled{ opacity:.35; cursor:default; }
+
+  .stop-all{ margin-top: 4px; width:100%; padding: 15px; background: var(--red); border:none; border-radius:6px;
+    color:#fff; font-weight:700; font-size:15px; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
+  .stop-all:disabled{ opacity:.35; cursor:default; }
+  .stop-all:active{ filter: brightness(0.85); }
+
+  .log{ background:#141617; border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px;
+    font-family:'JetBrains Mono', monospace; font-size: 11px; line-height: 1.6; overflow-y: auto;
+    min-height: 100px; max-height: 200px; }
+  .log .line{ white-space: pre-wrap; word-break: break-all; }
+  .log .line.tx{ color: var(--amber); }
+  .log .line.rx{ color: var(--text-dim); }
+  .log .line.sys{ color: var(--green); }
+  .log .line.err{ color: var(--red); }
+
+  .note{ font-size: 12px; color: var(--text-dim); font-family:'JetBrains Mono',monospace; background: var(--panel);
+    border: 1px dashed var(--border); border-radius: 6px; padding: 10px 12px; margin-top: 12px; line-height:1.6; }
+
+  /* ---------- gamepad/mapping ---------- */
+  .map-select{ font-family:'JetBrains Mono',monospace; font-size:12px; background: var(--panel-raised);
+    color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 5px 6px; flex:1; min-width:0; }
+  .axis-block{ background: var(--panel); border: 1px solid var(--border); border-radius:6px; padding: 10px 12px; margin-bottom: 8px; }
+  .axis-block .axis-label{ display:flex; justify-content:space-between; font-family:'JetBrains Mono',monospace;
+    font-size:11px; color: var(--text-dim); margin-bottom:6px; }
+  .axis-bar-track{ position:relative; height:9px; background: var(--panel-raised); border-radius:5px; overflow:hidden; }
+  .axis-bar-fill{ position:absolute; top:0; bottom:0; left:50%; background: var(--amber); width:0; transform-origin:left center; }
+  .axis-map-row{ display:flex; align-items:center; gap:8px; margin-top:8px; flex-wrap:wrap; }
+  .axis-map-row label{ display:flex; align-items:center; gap:5px; font-size:10px; color: var(--text-dim);
+    font-family:'JetBrains Mono',monospace; white-space:nowrap; }
+  .btn-row-map{ display:flex; align-items:center; gap:8px; background: var(--panel); border: 1px solid var(--border);
+    border-radius:6px; padding: 7px 10px; margin-bottom:5px; }
+  .btn-idx{ width:40px; text-align:center; padding:4px 0; border-radius:4px; background: var(--panel-raised);
+    font-family:'JetBrains Mono',monospace; font-size:10px; color: var(--text-dim); flex-shrink:0;
+    transition: background .06s, color .06s; }
+  .btn-idx.pressed{ background: var(--amber); color:#1b1e1f; }
+  .chip-list{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .chip{ display:flex; align-items:center; gap:6px; background: var(--panel-raised); border:1px solid var(--border);
+    border-radius:4px; padding:4px 8px; font-family:'JetBrains Mono',monospace; font-size:11px; }
+  .chip button{ padding:0 4px; border:none; font-size:12px; color: var(--red); background:none; }
+  .chip button:hover{ background:none; color:#fff; }
+
+  /* ---------- sequences ---------- */
+  .seq-list{ display:flex; flex-direction:column; gap:8px; }
+  .seq-item{ background: var(--panel); border: 1px solid var(--border); border-radius:6px; padding:10px 12px;
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .seq-item .name{ font-weight:700; flex:1; min-width:120px; }
+  .seq-item .meta{ font-family:'JetBrains Mono',monospace; font-size:11px; color: var(--text-dim); }
+  .rec-clock{ font-family:'JetBrains Mono',monospace; font-size:32px; color: var(--amber); text-align:center;
+    padding: 14px 0; }
+  .rec-status{ text-align:center; font-family:'JetBrains Mono',monospace; font-size:12px; color: var(--text-dim);
+    text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; }
+  .timeline{ background:#141617; border: 1px solid var(--border); border-radius:6px; padding:10px; overflow-x:auto; }
+  .timeline-row{ display:flex; align-items:center; gap:8px; height:26px; position:relative; }
+  .timeline-row .tl-label{ width:110px; flex-shrink:0; font-family:'JetBrains Mono',monospace; font-size:10px;
+    color: var(--text-dim); }
+  .timeline-row .tl-track{ position:relative; flex:1; height:16px; background: var(--panel-raised); border-radius:3px; }
+  .tl-block{ position:absolute; top:0; bottom:0; background: var(--amber); border-radius:2px; opacity:.85; }
+  .rec-controls{ display:flex; gap:8px; justify-content:center; margin: 10px 0; }
+
+  footer{ padding: 8px 20px; font-family:'JetBrains Mono', monospace; font-size: 10px; color: var(--text-dim);
+    border-top: 1px solid var(--border); text-align:center; }
+
+  .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center;
+    justify-content:center; z-index:1000; }
+  .modal{ background: var(--panel); border:1px solid var(--border); border-radius:8px; padding:20px; max-width:360px;
+    width: 90%; }
+  .modal h3{ margin:0 0 12px 0; font-size:15px; text-transform:uppercase; letter-spacing:.05em; }
+  .modal p{ font-size:13px; color: var(--text-dim); line-height:1.5; }
+  .modal .modal-actions{ display:flex; gap:8px; margin-top:16px; justify-content:flex-end; }
+</style>
+</head>
+<body>
+
+<div class="sticky-header">
+  <div class="topbar">
+    <h1>Graafmachine — bedieningspaneel</h1>
+  </div>
+
+  <div class="conn-bar">
+    <button id="btnConnect">+ Verbind micro:bit</button>
+    <div class="conn-slot"><span class="status-dot" id="dotHub1"></span><span class="conn-label">Hub 1:</span><span id="labelHub1">niet verbonden</span></div>
+    <div class="conn-slot"><span class="status-dot" id="dotHub2"></span><span class="conn-label">Hub 2:</span><span id="labelHub2">niet verbonden</span></div>
+    <div class="spacer"></div>
+    <button id="btnSwap">Wissel hub 1 ↔ hub 2</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="hub1">Bovenbouw</button>
+    <button class="tab-btn" data-tab="hub2">Rijwerk</button>
+    <button class="tab-btn" data-tab="overzicht">Overzicht</button>
+    <button class="tab-btn" data-tab="pad">Controller</button>
+    <button class="tab-btn" data-tab="seq">Sequences</button>
+    <button class="tab-btn" data-tab="settings">Instellingen</button>
+  </div>
+</div>
+
+<div class="tab-panel active" id="tab-hub1"></div>
+<div class="tab-panel" id="tab-hub2"></div>
+<div class="tab-panel" id="tab-overzicht"></div>
+<div class="tab-panel" id="tab-pad"></div>
+<div class="tab-panel" id="tab-seq"></div>
+<div class="tab-panel" id="tab-settings"></div>
+
+<footer>Web Serial · client-side, geschikt voor GitHub Pages · geen server nodig</footer>
+<div id="modalRoot"></div>
+
+<script src="js/storage.js"></script>
+<script src="js/motorConfig.js"></script>
+<script src="js/speed.js"></script>
+<script src="js/hubs.js"></script>
+<script src="js/mapping.js"></script>
+<script src="js/sequences.js"></script>
+<script src="js/settingsIO.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

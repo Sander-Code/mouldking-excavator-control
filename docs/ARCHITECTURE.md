@@ -73,3 +73,23 @@ Eén bestand, drie tabs, elk onafhankelijk:
 `lego.set()` verstuurt altijd alle 4 kanalen van een hub in één keer (zie
 [`PROTOCOL.md`](PROTOCOL.md)) — de state-objecten in `createHub` houden
 daarom altijd de volledige set bij, nooit een los kanaal.
+
+## v3 — module-structuur
+
+De single-file versie is herbouwd tot losse modules onder `web/js/`,
+geladen in deze volgorde (afhankelijkheden lopen van boven naar beneden):
+
+| Bestand | Verantwoordelijkheid |
+|---|---|
+| `storage.js` | Generieke `localStorage`- en bestands-export/import-helpers |
+| `motorConfig.js` | Welk fysiek kanaal (a/b/c/d) hoort bij welke functie, per hub, incl. invert |
+| `speed.js` | Eén globale, gedeelde "Kracht"-waarde (1–7, decimaal voor stap-mapping) |
+| `hubs.js` | `HubManager` — globale Web Serial-verbindingen, MAC-adres-herkenning, rol-registry, `setChannel()` |
+| `mapping.js` | Gamepad/toetsenbord-mapping: assen, knoppen, D-pad, kalibratie, kracht-stap, noodstop |
+| `sequences.js` | `SequenceRecorder`, `SequencePlayer`, `SequenceStore`, `SequenceIO` (opname/afspelen/export/import) |
+| `settingsIO.js` | Export/import van motor-config + gamepad-mapping + hub-registry samen |
+| `ui.js` | Bouwt alle tab-content dynamisch op, wiret alle bovenstaande modules aan de DOM |
+| `main.js` | Bootstrap — laadt config, start `UI.init()` |
+
+Zie [`STATUS.md`](STATUS.md) voor welke delen hiervan al hardware-getest
+zijn en welke nog niet.
