@@ -79,4 +79,4 @@ oppakt.
 
 ## Licentie
 
-MIT — zie [`LICENSE`](LICENSE).
+zie [`LICENSE`](LICENSE).
